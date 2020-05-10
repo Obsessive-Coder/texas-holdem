@@ -7,7 +7,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+.playing-card-image {
+  width: 100px;
+  height: auto;
+}
+
+.community-cards {
+  width: 580px;
 }
