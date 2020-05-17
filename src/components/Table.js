@@ -1,24 +1,26 @@
 import React, { Component, Fragment } from 'react';
-import { HAND_RANK_HELPER } from '../utilities/helpers';
 import { GameController } from '../utilities/classes/';
 
 // Components.
 import Button from 'react-bootstrap/Button';
-import { BoardCards, PlayerCards } from './';
+import { BoardCards, PlayerCards, BettingControls } from './';
 
 export default class Table extends Component {
   constructor(props) {
     super(props);
 
+    const gameController = new GameController();
+
     this.state = {
-      gameController: new GameController(),
+      gameController,
+      actionBetAmount: gameController.bigBlindAmount,
     };
   }
 
   startNewHand = () => {
     const { gameController: { startNewHand } } = this.state;
     const gameController = startNewHand();
-    this.setState(() => ({ gameController }));
+    this.setState(() => ({ gameController, actionBetAmount: gameController.bigBlindAmount }));
   }
 
   startGame = () => {
@@ -27,30 +29,73 @@ export default class Table extends Component {
     this.setState(() => ({ gameController }));
   };
 
-  progressGame = () => {
+  progressGame = (isGameOver = false) => {
     let { gameController } = this.state;
     const { gameStatus } = gameController;
 
     if (gameStatus === 'showdown') {
-      gameController = gameController.startNewHand();
+      gameController = gameController.startNewHand(isGameOver);
     }
 
     gameController = gameController.progressGame();
 
-    this.setState(() => ({ gameController }));
+    this.setState(() => ({ gameController, actionBetAmount: gameController.bigBlindAmount }));
   }
 
-  render() {
-    const { gameController } = this.state;
-    const { boardCards, gameStatus, players, winner } = gameController;
+  handleActionButtonOnClick = ({ target: { name: action } }) => {
+    let { gameController, actionBetAmount } = this.state;
 
-    const bettingButtons = [{
-      labelText: 'Call',
-    }, {
-      labelText: 'Raise',
-    }, {
-      labelText: 'Fold',
-    }];
+    if (action === 'call') gameController.callBet();
+    if (action === 'bet' || action === 'raise') {
+      gameController.makeBet(actionBetAmount, action === 'raise');
+    }
+
+    if (action === 'all-in') gameController.goAllIn();
+
+    if (action === 'fold') {
+      gameController.foldHand();
+      this.progressGame();
+    };
+
+    gameController.incrementActionPlayer();
+
+    const {
+      actionPlayerIndex, _firstActionPlayerIndex,
+    } = gameController;
+
+    if (action !== 'bet' && actionPlayerIndex === _firstActionPlayerIndex) {
+      return this.progressGame();
+    }
+
+    this.setState(() => ({ gameController }));
+  };
+
+  handleBetChange = actionBetAmount => {
+    this.setState(() => ({ actionBetAmount }))
+  };
+
+  render() {
+    const { gameController, actionBetAmount, } = this.state;
+    const {
+      boardCards, gameStatus, players, winnerPlayer,
+      dealerPlayerIndex, smallBlindPlayerIndex,
+      bigBlindPlayerIndex, bigBlindAmount,
+      potTotal, currentBet, actionPlayerIndex,
+      isAutoProgress,
+    } = gameController;
+
+    if (gameStatus !== 'showdown' && isAutoProgress) {
+      this.progressGame();
+    }
+
+    let isGameOver = false;
+    for (let i = 0; i < players.length; i++) {
+      const { chipTotal } = players[i];
+      if (gameStatus === 'showdown' && chipTotal === 0) {
+        isGameOver = true;
+        break;
+      }
+    }
 
     return (
       <div className="vh-100">
@@ -71,27 +116,47 @@ export default class Table extends Component {
             <BoardCards
               key={boardCards.length}
               cards={boardCards}
-              winner={winner}
+              potTotal={potTotal}
+              winnerPlayer={winnerPlayer}
+              isGameOver={isGameOver}
             />
 
             <div className="d-flex justify-content-around">
               {players.map(({
-                handResult, holeCards, seatNumber,
+                handResult, holeCards, seatNumber, chipTotal,
               }, index) => (
                 <Fragment key={`player-${seatNumber}-cards-${holeCards.length}`}>
                   <PlayerCards
+                    playerIndex={index}
                     cards={holeCards}
                     handRank={handResult ? handResult.rank : false}
+                    isDealer={index === dealerPlayerIndex}
+                    isSmallBlind={index === smallBlindPlayerIndex}
+                    isBigBlind={index === bigBlindPlayerIndex}
+                    chipTotal={chipTotal}
+                    actionPlayerIndex={actionPlayerIndex}
                   />
 
-                  {index === 0 && (
+                  {index === 0 && gameStatus.includes('betting') && (
+                    <BettingControls
+                      currentBet={currentBet}
+                      playerBet={players[actionPlayerIndex].currentBet}
+                      isPlayerAllIn={players[actionPlayerIndex].isAllIn}
+                      bigBlindAmount={bigBlindAmount}
+                      actionBetAmount={actionBetAmount}
+                      handleButtonOnClick={this.handleActionButtonOnClick}
+                      handleBetChange={this.handleBetChange}
+                    />
+                  )}
+
+                  {index === 0 && gameStatus === 'showdown' && (
                     <Button
                       variant="outline-primary"
                       size="lg"
-                      onClick={this.progressGame}
-                      className="align-self-center"
+                      onClick={() => this.progressGame(isGameOver)}
+                      className="align-self-start"
                     >
-                      Next
+                      {isGameOver ? 'New Game' : 'Next Hand'}
                     </Button>
                   )}
                 </Fragment>

@@ -4,7 +4,7 @@ export default class Card {
   constructor (rank, suit) {
     this._rank = rank;
     this._suit = suit;
-    this._isShown = true;
+    this._isShown = false;
     this._image = this.image;
   }
 

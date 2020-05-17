@@ -318,7 +318,7 @@ describe('Hand Rank Helper', () => {
   describe('Get Pair', () => {
     it('returns an array of 2 Cards', () => {
       const cards = [
-        new Card(13, 'spades'), new Card(13, 'spades'), new Card(12, 'spades'), new Card(9, 'spades'),
+        new Card(13, 'spades'), new Card(13, 'diamonds'), new Card(3, 'spades'), new Card(9, 'spades'),
         new Card(8, 'spades'), new Card(6, 'spades'), new Card(7, 'spades'),
       ];
 
@@ -327,6 +327,7 @@ describe('Hand Rank Helper', () => {
       expect(pairCards).toHaveLength(2);
       expect(pairCards[0]).toBeInstanceOf(Card);
       expect(pairCards[1]).toBeInstanceOf(Card);
+      expect(showdownCards.resultCards).toHaveLength(5);
     });
 
     it('returns false if there is no pair', () => {

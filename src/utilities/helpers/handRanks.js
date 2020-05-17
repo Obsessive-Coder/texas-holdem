@@ -1,16 +1,37 @@
 export default class HAND_RANK_MANAGER {
   constructor(cards) {
     this._cards = cards;
+    this._resultCards = [];
     this.sortCards();
   }
 
   get cards() { return [].concat(this._cards); }
+
+  get resultCards() { return [].concat(this._resultCards); }
 
   sortCards(isAscending = false) {
     return this._cards.sort(({ rank: aRank }, { rank: bRank}) => (
       isAscending ? aRank - bRank : bRank - aRank
     ));
   };
+
+  getResultCards(cards) {
+    let otherCards = [];
+    this.cards.forEach(card => {
+      let isPairCard = false;
+
+      cards.forEach(({ rank, suit }) => {
+        if (isPairCard) return;
+        isPairCard = (rank === card.rank) && (suit === card.suit);
+      });
+
+      if (!isPairCard) otherCards.push(card);
+    });
+
+    otherCards.sort(({ rank: aRank }, { rank: bRank }) => bRank - aRank);
+    otherCards = cards.concat(otherCards);
+    this._resultCards = otherCards.slice(0, 5);
+  }
 
   getRoyalFlush() {
     const royalFlushCards = this.getStraightFlush();
@@ -19,7 +40,12 @@ export default class HAND_RANK_MANAGER {
     const highCard = this.getHighCard()[0];
     const { rank } = highCard;
 
-    return rank === 14 ? royalFlushCards : false;
+    const isRoyalFlush = rank === 14;
+    if (isRoyalFlush) this.getResultCards(royalFlushCards);
+
+    console.log(isRoyalFlush);
+
+    return isRoyalFlush ? royalFlushCards : false;
   };
 
   getStraightFlush() {
@@ -53,21 +79,33 @@ export default class HAND_RANK_MANAGER {
     straightFlushCards.sort(({ rank: aRank }, { rank: bRank }) => bRank - aRank);
     if (straightFlushCards.length > 5) straightFlushCards = straightFlushCards.splice(0, 5);
 
+    if (isStraightFlush) this.getResultCards(straightFlushCards);
+
     return isStraightFlush ? straightFlushCards : false;
   };
 
   getFourOfAKind() {
-    const threeOfAKindCards = this.getThreeOfAKind();
-    if (!threeOfAKindCards) return false;
+    this.sortCards();
 
-    let fourOfAKindCards = this.cards.filter(({ rank }) => (
-      rank === threeOfAKindCards[0].rank
-    ));
+    let isFourOfAKind = false;
+    let fourOfAKindCards = [];
+    this.cards.forEach((firstCard, firstIndex) => {
+      if (isFourOfAKind) return;
+      const { rank: firstRank } = firstCard;
+      fourOfAKindCards = [firstCard];
+      this.cards.forEach((secondCard, secondIndex) => {
+        if (isFourOfAKind || firstIndex === secondIndex) return;
+        const { rank: secondRank } = secondCard;
+        if (firstRank === secondRank) {
+          fourOfAKindCards.push(secondCard);
+          isFourOfAKind = fourOfAKindCards.length === 4;
+        }
+      });
+    });
 
-    const cardsLength = fourOfAKindCards.length;
-    if (cardsLength < 4) return false;
+    if (isFourOfAKind) this.getResultCards(fourOfAKindCards);
 
-    return fourOfAKindCards;
+    return isFourOfAKind ? fourOfAKindCards : false;
   };
 
   getFullHouse() {
@@ -86,7 +124,9 @@ export default class HAND_RANK_MANAGER {
     this._cards = tempCards;
     if (!pairCards) return false;
 
-    return threeOfAKindCards.concat(pairCards);
+    const fullHouseCards = threeOfAKindCards.concat(pairCards);
+    this.getResultCards(fullHouseCards);
+    return fullHouseCards;
   };
 
   getFlush() {
@@ -113,6 +153,8 @@ export default class HAND_RANK_MANAGER {
         }
       }
     }
+
+    if (isFlush) this.getResultCards(suitedCards);
 
     return isFlush ? suitedCards : false;
   };
@@ -147,6 +189,8 @@ export default class HAND_RANK_MANAGER {
     straightCards.sort(({ rank: aRank }, { rank: bRank }) => bRank - aRank);
     if (straightCards.length > 5) straightCards = straightCards.splice(0, 5);
 
+    if (isStraight) this.getResultCards(straightCards);
+
     return isStraight ? straightCards : false;
   };
 
@@ -169,6 +213,8 @@ export default class HAND_RANK_MANAGER {
       });
     });
 
+    if (isThreeOfAKind) this.getResultCards(threeOfAKindCards);
+
     return isThreeOfAKind ? threeOfAKindCards : false;
   };
 
@@ -188,7 +234,10 @@ export default class HAND_RANK_MANAGER {
     this._cards = tempCards;
     if (!secondPairCards) return false;
 
-    return firstPairCards.concat(secondPairCards);
+    const pairCards = firstPairCards.concat(secondPairCards);
+    this.getResultCards(pairCards);
+
+    return pairCards;
   };
 
   getPair() {
@@ -210,12 +259,16 @@ export default class HAND_RANK_MANAGER {
       });
     });
 
+    if (isPair) this.getResultCards(pairCards);
+
     return isPair ? pairCards : false;
   };
 
   getHighCard() {
     this.sortCards();
-    return [this.cards[0]];
+    const highCards = [this.cards[0]];
+    this.getResultCards(highCards);
+    return highCards;
   };
 };
 

@@ -5,13 +5,30 @@ export default class Player {
     this.seatNumber = seatNumber;
     this.holeCards = [];
     this._handResult = false;
+    this._resultCards = false;
+    this._chipTotal = 1500;
+    this._currentBet = 0;
+    this._isAllIn = false;
   }
 
   get handResult() { return this._handResult; }
+  get resultCards() { return this._resultCards; }
+
+  get chipTotal() { return this._chipTotal; }
+  set chipTotal(chipTotal) { this._chipTotal = chipTotal; }
+
+  get currentBet() { return this._currentBet; }
+  set currentBet(currentBet) { this._currentBet = currentBet; }
+
+  get isAllIn() { return this._isAllIn; }
+  set isAllIn(isAllIn) { this._isAllIn = isAllIn; }
 
   clearHand() {
     this.holeCards = [];
     this._handResult = false;
+    this._resultCards = false;
+    this._currentBet = 0;
+    this._isAllIn = false;
   }
 
   calculateHandResult(boardCards) {
@@ -46,7 +63,8 @@ export default class Player {
     }
 
     this._handResult = handResult;
+    this._resultCards = handRankHelper.resultCards;
 
-    return handResult;
+    return this.resultCards;
   }
 }

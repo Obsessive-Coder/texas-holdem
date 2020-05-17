@@ -5,7 +5,9 @@ import { Card as CardClass } from '../utilities/classes/';
 // Components.
 import { Card } from './';
 
-export default function BoardCards({ cards, winner }) {
+export default function BoardCards({
+  cards, winnerPlayer, potTotal, isGameOver,
+}) {
   return (
     <div className="d-flex flex-column flex-fill">
       <div className="d-flex align-items-center flex-fill mx-auto community-cards">
@@ -15,11 +17,19 @@ export default function BoardCards({ cards, winner }) {
       </div>
 
       <div className="h-25">
-        {winner && (
-          <h2 className="text-center">
-            {winner}
-          </h2>
-        )}
+        <h2 className="text-center">
+          <p>
+            {winnerPlayer ? (
+              `Player ${winnerPlayer.seatNumber} Wins!`
+            ) : (
+            `Pot: ${potTotal}`
+            )}
+          </p>
+
+          {isGameOver && (
+            <p>Game Over</p>
+          )}
+        </h2>
       </div>
     </div>
   )
